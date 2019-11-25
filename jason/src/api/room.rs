@@ -158,18 +158,18 @@ impl Room {
         }
 
         let (tx, peer_events_rx) = mpsc::unbounded();
-        let events_stream = rpc.subscribe();
-        let room = Rc::new(RefCell::new(InnerRoom::new(rpc, peers, tx)));
-
-        let rpc_events_stream = events_stream.map(RoomEvent::RpcEvent);
-        let peer_events_stream = peer_events_rx.map(RoomEvent::PeerEvent);
-
-        let mut events = stream::select(rpc_events_stream, peer_events_stream);
+        let room =
+            Rc::new(RefCell::new(InnerRoom::new(Rc::clone(&rpc), peers, tx)));
 
         let inner = Rc::downgrade(&room);
-        // Spawns `Promise` in JS, does not provide any handles, so the current
-        // way to stop this stream is to drop all connected `Sender`s.
+
         spawn_local(async move {
+            let rpc_events_stream = rpc.subscribe().map(RoomEvent::RpcEvent);
+            let peer_events_stream = peer_events_rx.map(RoomEvent::PeerEvent);
+
+            let mut events =
+                stream::select(rpc_events_stream, peer_events_stream);
+
             while let Some(event) = events.next().await {
                 match inner.upgrade() {
                     None => {
