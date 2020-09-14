@@ -46,7 +46,7 @@ impl CommandHandler for Room {
         })?;
 
         let event = if from_peer.is_known_to_remote() {
-            Event::TracksApplied {
+            Event::PeerUpdated {
                 peer_id: to_peer.id(),
                 negotiation_role: Some(NegotiationRole::Answerer(sdp_offer)),
                 updates: to_peer.get_updates(),
@@ -145,7 +145,7 @@ impl CommandHandler for Room {
         Ok(())
     }
 
-    /// Sends [`Event::TracksApplied`] with data from the received
+    /// Sends [`Event::PeerUpdated`] with data from the received
     /// [`Command::UpdateTracks`].
     ///
     /// Starts renegotiation process.
